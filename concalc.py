@@ -49,6 +49,8 @@ def cube_ft_to_yard(cube_ft):
     cube_ft_to_yard = cube_ft * 27
     return cube_ft_to_yard
 
+# TODO: add volume method
+
 def curb_gutter():
     base_width = float(input("Enter base width (inches): "))
     gutter_width = float(input("Enter gutter width (inches): "))
