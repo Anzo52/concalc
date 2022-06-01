@@ -1,86 +1,104 @@
-# concrete calculator - calculate concrete volume based on user input
-# Curb and gutter - in: base (inches), back height (inches), curb width (inches), toe height (inches), gutter width (inches), face height (inches)
-# Sidewalk - in: thickness (inches), width (feet), length (feet)
-# Patio/other - in: dimension1 (feet), dimension2 (feet), thickness (inches)
-# Program will take input from command line and output volume in cubic feet
+# Flask API for calculating volume of concrete needed to fill a given space.
+# Endpoints and usage:
+#   concalc/api/v1/curbgutter/<int:base_width_inches>&<int:toe_height_inches>&<int:face_height_inches>&<curb_width_inches>&<back_height_inches>&<length_feet>
+#   concalc/api/v1/sidewalk/<int:thickness_inches>&<width_feet>&<length_feet>
+#   concalc/api/v1/patio/<int:thickness_inches>&<width_feet>&<length_feet>
+#
+# Returns JSON object with the following fields:
+#  double: volume_cubic_yards
+#
+# Documentation generated using flask-autodoc:
+#   http://flask-autodoc.readthedocs.io/en/latest/
 
 
-import sys  # for command line arguments
-import math  # for math functions
+
+from flask import Flask, jsonify, request
+from flask_restful import Resource, Api
+from flask_cors import CORS
+import json
+import requests
+import sys
+import os
+import math
 
 
-def main():
-    # check if user input is correct
-    if len(sys.argv) != 2:
-        print("Usage: python3 concalc.py <concrete type>")
-        sys.exit()
+app = Flask(__name__)
+from flask_autodoc import Autodoc
 
-    # get user input
-    user_input = sys.argv[1]
+auto = Autodoc(app)
 
-    # check if user input is valid
-    if user_input not in ["curb-gutter", "sidewalk", "patio"]:
-        print("Invalid input. Please enter curb-gutter, sidewalk, or patio.")
-        sys.exit()
+api = Api(app)
 
-    # get user input
-    user_input = sys.argv[1]
+def inches_to_yards(inches):
+    return inches / 36
 
+def feet_to_yards(feet):
+    return feet / 3
 
-    # curb-gutter
-    if user_input == "curb-gutter":
-        curb_gutter()
+class curbGutter(Resource):
+    def get(self):
+        # Get the base width, toe height, face height, curb width, and back height
+        base_width_inches = request.args.get('base_width_inches')
+        toe_height_inches = request.args.get('toe_height_inches')
+        face_height_inches = request.args.get('face_height_inches')
+        curb_width_inches = request.args.get('curb_width_inches')
+        back_height_inches = request.args.get('back_height_inches')
+        length_feet = request.args.get('length_feet')
 
-    # sidewalk
-    elif user_input == "sidewalk":
-        sidewalk()
+        # Calculate the volume of concrete needed to fill the curb gutter
+        base_width_yards = inches_to_yards(base_width_inches)
+        toe_height_yards = inches_to_yards(toe_height_inches)
+        face_height_yards = inches_to_yards(face_height_inches)
+        curb_width_yards = inches_to_yards(curb_width_inches)
+        back_height_yards = inches_to_yards(back_height_inches)
+        length_yards = feet_to_yards(length_feet)
+        vol_cubic_yards = (base_width_yards * toe_height_yards * face_height_yards * curb_width_yards * back_height_yards * length_yards)
 
-    # patio
-    elif user_input == "patio":
-        patio()
-
-# TODO cast to doubles
-def curb_gutter():
-    base_width = float(input("Enter base width (inches): "))
-    gutter_width = float(input("Enter gutter width (inches): "))
-    curb_width = float(input("Enter curb width (inches): "))
-    toe_height = float(input("Enter toe height (inches): "))
-    face_height = float(input("Enter face height (inches): "))
-    back_height = float(input("Enter back height (inches): "))
-    length = float(input("Enter length (feet): "))
-    
-    # calculate volume
-    volume_cube_ft = (((base_width / 12) * (toe_height / 12)) + ((curb_width / 12) * (face_height / 12))) * length
-    volume_cube_yrd = volume_cube_ft / 27
-    print("You need: ", volume_cube_yrd, " yards.")
+        # Return the volume of concrete needed to fill the curb gutter
+        return jsonify({'volume_cubic_yards': vol_cubic_yards})
 
 
-# FIXME math is wrong, need cubic yards
-def sidewalk():
-    # get user input
-    thickness = float(input("Enter thickness (inches): "))
-    width = float(input("Enter width (feet): "))
-    length = float(input("Enter length (feet): "))
+class sidewalk(Resource):
+    def get(self):
+        # Get the thickness and width of the sidewalk
+        thickness_inches = request.args.get('thickness_inches')
+        width_feet = request.args.get('width_feet')
+        length_feet = request.args.get('length_feet')
 
-    # calculate volume
-    vol_cube_ft = (thickness * 12) * width * length
-    vol_cube_yrd = vol_cube_ft / 27
-    print("You need: ", vol_cube_yrd, " yards.")
+        # Calculate the volume of concrete needed to fill the sidewalk
+        thickness_yards = inches_to_yards(thickness_inches)
+        width_yards = feet_to_yards(width_feet)
+        length_yards = feet_to_yards(length_feet)
+        vol_cubic_yards = (thickness_yards * width_yards * length_yards)
 
-
-def patio():
-    thickness = float(input("Enter thickness (inches): "))
-    width = float(input("Enter width (feet): "))
-    length = float(input("Enter length (feet): "))
-
-    # calculate volume
-    vol_cube_ft = (thickness * 12) * width * length
-    vol_cube_yrd = vol_cube_ft / 27
-    print("You need: ", vol_cube_yrd, " yards.")
+        # Return the volume of concrete needed to fill the sidewalk
+        return jsonify({'volume_cubic_yards': vol_cubic_yards})
 
 
-if __name__ == "__main__":
-    main()
+class patio(Resource):
+    def get(self):
+        # Get the thickness and width of the patio
+        thickness_inches = request.args.get('thickness_inches')
+        width_feet = request.args.get('width_feet')
+        length_feet = request.args.get('length_feet')
+
+        # Calculate the volume of concrete needed to fill the patio
+        thickness_yards = inches_to_yards(thickness_inches)
+        width_yards = feet_to_yards(width_feet)
+        length_yards = feet_to_yards(length_feet)
+        vol_cubic_yards = (thickness_yards * width_yards * length_yards)
+
+        # Return the volume of concrete needed to fill the patio
+        return jsonify({'volume_cubic_yards': vol_cubic_yards})
 
 
-# end of file
+api.add_resource(curbGutter, '/concalc/api/v1/curbgutter/<int:base_width_inches>&<int:toe_height_inches>&<int:face_height_inches>&<curb_width_inches>&<back_height_inches>&<length_feet>')
+api.add_resource(sidewalk, '/concalc/api/v1/sidewalk/<int:thickness_inches>&<width_feet>&<length_feet>')
+api.add_resource(patio, '/concalc/api/v1/patio/<int:thickness_inches>&<width_feet>&<length_feet>')
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+
+# End of concalc.py
